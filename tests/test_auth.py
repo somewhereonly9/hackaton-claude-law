@@ -55,3 +55,16 @@ def test_login_get_muestra_formulario(client):
 def test_crear_admin(db):
     u = crear_admin(db, "root@x.com", "Root", "secreta123")
     assert u.es_admin and u.activo
+
+
+def test_cli_main_crea_admin(app, db, monkeypatch):
+    from app import cli
+    from app.modelos import Usuario
+
+    monkeypatch.setattr(cli, "getpass", lambda _="": "secreta123")
+    entradas = iter(["Root", "root@x.com"])
+    monkeypatch.setattr("builtins.input", lambda _="": next(entradas))
+    codigo = cli.main(["app.cli", "crear-admin"], engine=app.state.engine)
+    assert codigo == 0
+    u = db.query(Usuario).filter_by(email="root@x.com").one()
+    assert u.es_admin

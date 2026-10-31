@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.usuarios.servicio import autenticar
-from app.web.plantillas import templates
+from app.web.render import templates
 
 router = APIRouter()
 
