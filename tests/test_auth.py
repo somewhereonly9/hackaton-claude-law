@@ -68,3 +68,18 @@ def test_cli_main_crea_admin(app, db, monkeypatch):
     assert codigo == 0
     u = db.query(Usuario).filter_by(email="root@x.com").one()
     assert u.es_admin
+
+
+def test_post_sin_sesion_desde_navegador_redirige_a_login(client):
+    r = client.post("/documentos", headers={"Accept": "text/html"}, follow_redirects=False)
+    assert r.status_code == 303 and r.headers["location"] == "/login"
+
+
+def test_put_sin_sesion_sigue_siendo_json_401(client):
+    r = client.put("/documentos/1/contenido", json={"type": "doc", "content": []})
+    assert r.status_code == 401 and r.json() == {"detalle": "no autenticado"}
+
+
+def test_htmx_sin_sesion_sigue_siendo_json_401(client):
+    r = client.post("/documentos", headers={"Accept": "text/html", "HX-Request": "true"})
+    assert r.status_code == 401 and r.json() == {"detalle": "no autenticado"}

@@ -55,3 +55,49 @@ def test_admin_desactiva_usuario(client, db):
     assert r.status_code == 303
     client.post("/logout")
     assert client.post("/login", data={"email": "n@x.com", "password": "secreta123"}).status_code == 400
+
+
+def _crear_datos(client, **datos):
+    base = {"email": "n@x.com", "nombre": "N", "password": "secreta123"}
+    base.update(datos)
+    return client.post("/admin/usuarios", data=base, follow_redirects=False)
+
+
+def _admin(client, db):
+    crear(db, "admin@x.com", es_admin=True); entrar(client, "admin@x.com")
+
+
+def _cantidad(db):
+    from sqlalchemy import func, select
+    from app.modelos import Usuario
+    db.expire_all()
+    return db.scalar(select(func.count()).select_from(Usuario))
+
+
+def test_admin_rechaza_datos_invalidos(client, db):
+    _admin(client, db)
+    for datos in (
+        {"email": "a" * 300 + "@x.com"},
+        {"email": "sinarroba"},
+        {"email": ""},
+        {"nombre": "   "},
+        {"nombre": "n" * 201},
+    ):
+        r = _crear_datos(client, **datos)
+        assert r.status_code == 400, datos
+        assert 'role="alert"' in r.text
+    assert _cantidad(db) == 1
+
+
+def test_es_admin_solo_con_true(client, db):
+    from sqlalchemy import select
+    from app.modelos import Usuario
+    _admin(client, db)
+    assert _crear_datos(client, es_admin="false").status_code == 303
+    assert db.scalar(select(Usuario).where(Usuario.email == "n@x.com")).es_admin is False
+
+
+def test_activo_invalido_es_400(client, db):
+    _admin(client, db)
+    u = crear(db, "n@x.com")
+    assert client.post(f"/admin/usuarios/{u.id}/activo", data={"activo": "x"}).status_code == 400

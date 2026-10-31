@@ -34,8 +34,8 @@
 
 <h2>Crear usuario</h2>
 <form method="post" action="/admin/usuarios" class="formulario">
-  <label>Correo <input type="email" name="email" required></label>
-  <label>Nombre <input type="text" name="nombre" required></label>
+  <label>Correo <input type="email" name="email" maxlength="255" required></label>
+  <label>Nombre <input type="text" name="nombre" maxlength="200" required></label>
   <label>Contraseña <input type="password" name="password" minlength="8" required></label>
   <label><input type="checkbox" name="es_admin" value="true"> Administrador</label>
   <button type="submit">Crear</button>

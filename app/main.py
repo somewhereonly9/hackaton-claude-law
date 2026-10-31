@@ -10,11 +10,13 @@ import app.modelos  # noqa: F401  (registra las tablas en Base.metadata)
 from app.config import Settings, get_settings
 from app.admin import rutas as rutas_admin
 from app.auth import rutas as rutas_auth
-from app.auth.dependencias import NoAutenticado, manejar_no_autenticado
+from app.auth.dependencias import NoAutenticado, es_navegacion, manejar_no_autenticado
 from app.db import crear_engine
 from app.documentos import rutas as rutas_documentos
 from app.exportar import rutas as rutas_exportar
 from app.documentos.servicio import ContenidoInvalido, NoEncontrado
+from app.modelos import Usuario
+from app.web.render import templates
 
 
 def create_app(settings: Settings | None = None, test: bool = False) -> FastAPI:
@@ -31,11 +33,23 @@ def create_app(settings: Settings | None = None, test: bool = False) -> FastAPI:
         name="estaticos",
     )
     app.add_middleware(
-        SessionMiddleware, secret_key=settings.secret_key, same_site="lax", https_only=False
+        SessionMiddleware, secret_key=settings.secret_key, same_site="lax", https_only=settings.cookie_segura
     )
+
+    def _usuario_o_none(request: Request):
+        usuario_id = request.session.get("usuario_id")
+        if usuario_id is None:
+            return None
+        with app.state.SessionLocal() as db:
+            usuario = db.get(Usuario, usuario_id)
+        return usuario if usuario is not None and usuario.activo else None
 
     app.add_exception_handler(NoAutenticado, manejar_no_autenticado)
     async def no_encontrado(request: Request, exc: NoEncontrado):
+        if es_navegacion(request):
+            return templates.TemplateResponse(
+                request, "error.html", {"usuario": _usuario_o_none(request)}, status_code=404
+            )
         return JSONResponse({"detalle": "no encontrado"}, status_code=404)
 
     async def contenido_invalido(request: Request, exc: ContenidoInvalido):

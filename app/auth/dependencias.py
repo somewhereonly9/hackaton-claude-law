@@ -10,8 +10,13 @@ class NoAutenticado(Exception):
     pass
 
 
+def es_navegacion(request: Request) -> bool:
+    """Navegación o formulario nativo del navegador (no fetch ni HTMX)."""
+    return "hx-request" not in request.headers and "text/html" in request.headers.get("accept", "")
+
+
 def manejar_no_autenticado(request: Request, exc: NoAutenticado):
-    if request.method == "GET" and "text/html" in request.headers.get("accept", ""):
+    if es_navegacion(request):
         return RedirectResponse("/login", status_code=303)
     return JSONResponse({"detalle": "no autenticado"}, status_code=401)
 

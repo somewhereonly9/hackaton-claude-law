@@ -40,10 +40,10 @@ def crear(
     db: Session = Depends(get_db),
 ):
     try:
-        servicio.crear_usuario(db, email, nombre, password, es_admin=es_admin is not None)
+        servicio.crear_usuario(db, email, nombre, password, es_admin=es_admin == "true")
     except servicio.EmailDuplicado:
         return _pagina(request, db, admin, "Error: ya existe un usuario con ese correo.", 400)
-    except servicio.ContrasenaInvalida as e:
+    except (servicio.ContrasenaInvalida, servicio.DatosInvalidos) as e:
         return _pagina(request, db, admin, str(e), 400)
     return _redireccion()
 
@@ -73,6 +73,8 @@ def cambiar_activo(
     admin: Usuario = Depends(admin_actual),
     db: Session = Depends(get_db),
 ):
+    if activo not in ("true", "false"):
+        return _pagina(request, db, admin, "Valor de estado no válido.", 400)
     try:
         servicio.cambiar_activo(db, admin, usuario_id, activo == "true")
     except servicio.UsuarioNoEncontrado:

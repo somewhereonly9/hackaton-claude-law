@@ -60,3 +60,28 @@ def test_listar_ordena_por_actualizacion(db):
     db.execute(text("UPDATE documentos SET actualizado_en = '2020-01-01 00:00:00' WHERE id = :i"), {"i": nuevo.id})
     db.commit()
     assert [d.titulo for d in servicio.listar(db, u.id)] == ["Viejo", "Nuevo"]
+
+
+def test_documento_inexistente_desde_navegador_es_404_html(client, db):
+    from tests.helpers import crear, entrar
+    crear(db, "a@x.com"); entrar(client, "a@x.com")
+    r = client.get("/documentos/999999", headers={"Accept": "text/html"})
+    assert r.status_code == 404
+    assert r.headers["content-type"].startswith("text/html")
+    assert "/documentos" in r.text and "no encontr" in r.text.lower()
+
+
+def test_documento_inexistente_fetch_sigue_json(client, db):
+    from tests.helpers import crear, entrar
+    crear(db, "a@x.com"); entrar(client, "a@x.com")
+    r = client.get("/documentos/999999")
+    assert r.status_code == 404 and r.json() == {"detalle": "no encontrado"}
+
+
+def test_crear_no_comparte_contenido_vacio(app, db):
+    # La app usa expire_on_commit=False: el objeto conserva el dict original.
+    u = crear(db, "a@x.com")
+    with app.state.SessionLocal() as sesion:
+        doc = servicio.crear(sesion, u.id)
+        doc.contenido["content"].append({"type": "paragraph"})
+    assert servicio.CONTENIDO_VACIO["content"] == []
