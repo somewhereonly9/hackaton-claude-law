@@ -1,7 +1,7 @@
 # Editor de documentos legales asistido por IA — Diseño
 
 - **Fecha:** 2026-10-31
-- **Estado:** aprobado por secciones en conversación; pendiente de revisión escrita
+- **Estado:** aprobado
 - **Tipo:** prueba de concepto para hackatón (prima que funcione de punta a punta, no la escala)
 
 ## 1. Objetivo
@@ -208,5 +208,11 @@ Cada pieza deja la app funcionando. Cada tarea termina en commit y push.
 ## 13. Riesgos
 
 - **Embeddings locales en español:** la función por defecto de Chroma (`all-MiniLM-L6-v2`) está orientada al inglés. Si kilopass no ofrece embeddings y la calidad de búsqueda es mala, se cambia a un modelo multilingüe (`paraphrase-multilingual-MiniLM-L12-v2` vía `sentence-transformers`), que pesa más en el droplet.
-- **Memoria del droplet:** MySQL, LibreOffice (solo al exportar) y el modelo local de embeddings comparten la RAM. Se recomiendan al menos 2 GB, o 4 GB si se usan embeddings locales multilingües.
+- **Memoria del droplet:** el droplet actual es Ubuntu 24.04, 1 vCPU, **1 GB de RAM** y 35 GB de disco (DigitalOcean, SFO3). Es justo para MySQL, la app, Chroma y LibreOffice. Mitigaciones obligatorias:
+  - archivo de swap de 2 GB;
+  - MySQL afinado para poca memoria (`innodb_buffer_pool_size=128M`, `performance_schema=OFF`);
+  - un solo worker de uvicorn y una sola conversión de LibreOffice a la vez;
+  - preferir embeddings de kilopass; si no hay, solo el modelo ONNX por defecto de Chroma, nunca `sentence-transformers` con torch.
+
+  Si la demo va lenta, se escala el droplet a 2 GB.
 - **Python 3.12 (confirmado):** se fija esta versión porque algunas dependencias (Chroma) pueden no tener todavía ruedas para versiones más nuevas. En el droplet y en local se usa un entorno virtual con 3.12.
