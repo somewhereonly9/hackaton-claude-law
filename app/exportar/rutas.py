@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends
 from fastapi.responses import PlainTextResponse, Response
 from sqlalchemy.orm import Session
@@ -8,6 +10,8 @@ from app.documentos import servicio
 from app.exportar.pdf import ErrorConversionPDF, disposicion_adjunto, docx_a_pdf
 from app.exportar.word import tiptap_a_docx
 from app.modelos import Usuario
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/documentos")
 
@@ -37,6 +41,7 @@ def exportar_pdf(
     try:
         pdf = docx_a_pdf(docx)
     except ErrorConversionPDF:
+        logger.warning("Conversión a PDF fallida", exc_info=True)
         return PlainTextResponse(
             "No se pudo generar el PDF. Puedes descargar el .docx.", status_code=503
         )
