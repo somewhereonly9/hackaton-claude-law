@@ -35,3 +35,6 @@ htmlcov/
 
 # Claude Code (ajustes locales de cada persona)
 .claude/settings.local.json
+
+# Datos locales (perfil de LibreOffice, etc.)
+data/

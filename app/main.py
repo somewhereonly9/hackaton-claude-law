@@ -13,6 +13,7 @@ from app.auth import rutas as rutas_auth
 from app.auth.dependencias import NoAutenticado, manejar_no_autenticado
 from app.db import crear_engine
 from app.documentos import rutas as rutas_documentos
+from app.exportar import rutas as rutas_exportar
 from app.documentos.servicio import ContenidoInvalido, NoEncontrado
 
 
@@ -44,6 +45,7 @@ def create_app(settings: Settings | None = None, test: bool = False) -> FastAPI:
     app.add_exception_handler(ContenidoInvalido, contenido_invalido)
     app.include_router(rutas_auth.router)
     app.include_router(rutas_documentos.router)
+    app.include_router(rutas_exportar.router)
     app.include_router(rutas_admin.router)
 
     @app.get("/salud")
