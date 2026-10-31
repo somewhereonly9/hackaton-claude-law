@@ -10,6 +10,8 @@ def test_editor_incluye_contenido_escapado(client, db):
     assert r.status_code == 200
     assert 'id="editor"' in r.text and "editor.js" in r.text
     assert "</script><b>x" not in r.text
+    assert 'id="contenido-inicial"' in r.text
+    assert "\\u003c/script\\u003e\\u003cb\\u003ex" in r.text
 
 
 def test_editor_de_documento_ajeno_es_404(client, db):

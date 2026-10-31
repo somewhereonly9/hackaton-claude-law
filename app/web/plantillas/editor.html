@@ -2,12 +2,13 @@
 {% block titulo %}{{ documento.titulo }}{% endblock %}
 {% block contenido %}
 <div class="editor-cabecera">
-  <form hx-post="/documentos/{{ documento.id }}/titulo" hx-trigger="change" hx-target="#titulo-resultado" hx-swap="innerHTML">
+  <form hx-post="/documentos/{{ documento.id }}/titulo" hx-trigger="change, submit" hx-swap="none"
+        hx-on::after-request="document.getElementById('titulo-resultado').textContent = event.detail.successful ? 'Título guardado' : 'No se pudo guardar el título'">
     <label>Título
       <input type="text" name="titulo" value="{{ documento.titulo }}" maxlength="200" required>
     </label>
   </form>
-  <span id="titulo-resultado"></span>
+  <span id="titulo-resultado" role="status" aria-live="polite"></span>
   <span id="estado-guardado" role="status" aria-live="polite">Guardado</span>
 </div>
 
