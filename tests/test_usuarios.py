@@ -48,3 +48,8 @@ def test_cambiar_contrasena(db):
     cambiar_contrasena(db, u.id, "nueva12345")
     assert autenticar(db, "d@x.com", "nueva12345") is not None
     assert autenticar(db, "d@x.com", "secreta123") is None
+
+
+def test_verificar_hash_malformado_devuelve_false():
+    assert verificar("", "secreta123") is False
+    assert verificar("no-es-hash", "secreta123") is False
