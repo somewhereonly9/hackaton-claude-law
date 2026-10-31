@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block titulo %}Usuarios{% endblock %}
+{% block contenido %}
+<h1>Usuarios</h1>
+{% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
+
+<table class="tabla">
+  <thead>
+    <tr><th>Correo</th><th>Nombre</th><th>Admin</th><th>Activo</th><th>Acciones</th></tr>
+  </thead>
+  <tbody>
+    {% for u in usuarios %}
+    <tr>
+      <td>{{ u.email }}</td>
+      <td>{{ u.nombre }}</td>
+      <td>{{ "Sí" if u.es_admin else "No" }}</td>
+      <td>{{ "Sí" if u.activo else "No" }}</td>
+      <td>
+        <form method="post" action="/admin/usuarios/{{ u.id }}/contrasena">
+          <input type="password" name="password" placeholder="Nueva contraseña" minlength="8" required>
+          <button type="submit">Restablecer</button>
+        </form>
+        {% if u.id != usuario.id %}
+        <form method="post" action="/admin/usuarios/{{ u.id }}/activo">
+          <input type="hidden" name="activo" value="{{ 'false' if u.activo else 'true' }}">
+          <button type="submit">{{ "Desactivar" if u.activo else "Activar" }}</button>
+        </form>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<h2>Crear usuario</h2>
+<form method="post" action="/admin/usuarios" class="formulario">
+  <label>Correo <input type="email" name="email" required></label>
+  <label>Nombre <input type="text" name="nombre" required></label>
+  <label>Contraseña <input type="password" name="password" minlength="8" required></label>
+  <label><input type="checkbox" name="es_admin" value="true"> Administrador</label>
+  <button type="submit">Crear</button>
+</form>
+{% endblock %}

@@ -7,6 +7,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 import app.modelos  # noqa: F401  (registra las tablas en Base.metadata)
 from app.config import Settings, get_settings
+from app.admin import rutas as rutas_admin
 from app.auth import rutas as rutas_auth
 from app.auth.dependencias import NoAutenticado, manejar_no_autenticado
 from app.db import crear_engine
@@ -33,6 +34,7 @@ def create_app(settings: Settings | None = None, test: bool = False) -> FastAPI:
     app.add_exception_handler(NoAutenticado, manejar_no_autenticado)
     app.include_router(rutas_auth.router)
     app.include_router(rutas_documentos.router)
+    app.include_router(rutas_admin.router)
 
     @app.get("/salud")
     def salud():
