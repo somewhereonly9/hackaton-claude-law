@@ -6,7 +6,7 @@ import re
 import docx
 
 PROFUNDIDAD_MAXIMA = 50
-_CARACTERES_INVALIDOS = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f￾￿]")
+_CARACTERES_INVALIDOS = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\ud800-\udfff￾￿]")
 _ESTILO_LISTA = {"bulletList": "List Bullet", "orderedList": "List Number"}
 _EN_LINEA = {"text", "hardBreak"}
 
@@ -32,7 +32,9 @@ def _marcas(nodo) -> set:
     return {m.get("type") for m in marcas if isinstance(m, dict)}
 
 
-def _escribir_en_linea(parrafo, nodos: list) -> None:
+def _escribir_en_linea(parrafo, nodos: list, profundidad: int = 0) -> None:
+    if profundidad > PROFUNDIDAD_MAXIMA:
+        return
     for nodo in nodos:
         tipo = _tipo(nodo)
         if tipo == "text":
@@ -46,7 +48,7 @@ def _escribir_en_linea(parrafo, nodos: list) -> None:
             parrafo.add_run().add_break()
         elif nodo is not None and _hijos(nodo):
             # Nodo en línea desconocido: se conserva su texto.
-            _escribir_en_linea(parrafo, _hijos(nodo))
+            _escribir_en_linea(parrafo, _hijos(nodo), profundidad + 1)
 
 
 def _nivel(nodo) -> int:
@@ -57,7 +59,32 @@ def _nivel(nodo) -> int:
     return 1
 
 
-def _escribir_bloques(documento, nodos: list, profundidad: int = 0, estilo_lista=None) -> None:
+def _nueva_numeracion(documento, inicio: int) -> int:
+    """Crea una instancia de numeración de 'List Number' que arranca en `inicio`."""
+    numeracion = documento.part.numbering_part.element
+    id_estilo = documento.styles["List Number"].element.pPr.numPr.numId.val
+    abstracto = numeracion.num_having_numId(id_estilo).abstractNumId.val
+    num = numeracion.add_num(abstracto)
+    num.add_lvlOverride(ilvl=0).add_startOverride(inicio)
+    return num.numId
+
+
+def _inicio(nodo) -> int:
+    attrs = nodo.get("attrs")
+    inicio = attrs.get("start") if isinstance(attrs, dict) else None
+    if isinstance(inicio, int) and not isinstance(inicio, bool) and 0 < inicio < 2**31:
+        return inicio
+    return 1
+
+
+def _asignar_numeracion(parrafo, num_id) -> None:
+    if num_id is not None:
+        num_pr = parrafo._p.get_or_add_pPr().get_or_add_numPr()
+        num_pr.get_or_add_ilvl().val = 0
+        num_pr.get_or_add_numId().val = num_id
+
+
+def _escribir_bloques(documento, nodos: list, profundidad: int = 0, estilo_lista=None, num_id=None) -> None:
     """Recorre nodos de bloque; agrupa los nodos en línea sueltos en un párrafo."""
     if profundidad > PROFUNDIDAD_MAXIMA:
         return
@@ -66,6 +93,7 @@ def _escribir_bloques(documento, nodos: list, profundidad: int = 0, estilo_lista
     def vaciar():
         if suelto:
             p = documento.add_paragraph(style=estilo_lista)
+            _asignar_numeracion(p, num_id)
             _escribir_en_linea(p, suelto)
             suelto.clear()
 
@@ -79,16 +107,18 @@ def _escribir_bloques(documento, nodos: list, profundidad: int = 0, estilo_lista
             continue
         if tipo == "paragraph":
             p = documento.add_paragraph(style=estilo_lista)
+            _asignar_numeracion(p, num_id)
             _escribir_en_linea(p, _hijos(nodo))
         elif tipo == "heading":
             p = documento.add_paragraph(style=f"Heading {_nivel(nodo)}")
             _escribir_en_linea(p, _hijos(nodo))
         elif tipo in _ESTILO_LISTA:
+            # Cada lista ordenada reinicia su numeración; las anidadas se aplanan.
+            num_lista = _nueva_numeracion(documento, _inicio(nodo)) if tipo == "orderedList" else None
             for item in _hijos(nodo):
-                # Las listas anidadas se aplanan al estilo de la lista más interna.
-                _escribir_bloques(documento, _hijos(item), profundidad + 1, _ESTILO_LISTA[tipo])
+                _escribir_bloques(documento, _hijos(item), profundidad + 1, _ESTILO_LISTA[tipo], num_lista)
         else:
-            _escribir_bloques(documento, _hijos(nodo), profundidad + 1, estilo_lista)
+            _escribir_bloques(documento, _hijos(nodo), profundidad + 1, estilo_lista, num_id)
     vaciar()
 
 
@@ -98,7 +128,7 @@ def tiptap_a_docx(contenido: dict, titulo: str) -> bytes:
     documento.core_properties.title = _limpiar(titulo)
     try:
         _escribir_bloques(documento, _hijos(contenido))
-    except RecursionError:  # pragma: no cover - la profundidad ya está acotada
+    except RecursionError:  # red de seguridad si algo supera el límite de la pila
         pass
     salida = io.BytesIO()
     documento.save(salida)

@@ -84,7 +84,7 @@ def test_entradas_malformadas_nunca_lanzan():
         {"type": "doc", "content": [None, 3, "x", {"type": None}, {"content": []}]},
         {"type": "doc", "content": [{"type": "paragraph", "content": [{"type": "text"}]}]},
         {"type": "doc", "content": [{"type": "paragraph", "content": [
-            {"type": "text", "text": "a\x00b\x0c", "marks": ["bold", {"type": "bold"}, None]}]}]},
+            {"type": "text", "text": "a\x00b\x0c\ud800c", "marks": ["bold", {"type": "bold"}, None]}]}]},
         {"type": "doc", "content": [{"type": "bulletList", "content": [{"type": "paragraph"}]}]},
         {"type": "doc", "content": [{"type": "horizontalRule"}, {"type": "codeBlock", "content": [texto("x = 1")]}]},
     ]
@@ -97,3 +97,29 @@ def test_anidamiento_profundo_no_lanza():
     for _ in range(3000):
         nodo = {"type": "blockquote", "content": [nodo]}
     assert leer(tiptap_a_docx({"type": "doc", "content": [nodo]}, "x")) is not None
+
+
+def _num_id_y_inicio(d, parrafo):
+    from docx.oxml.ns import qn
+    num_id = parrafo._p.pPr.numPr.numId.val
+    num = d.part.numbering_part.element.num_having_numId(num_id)
+    inicio = num.find(qn("w:lvlOverride")).find(qn("w:startOverride")).get(qn("w:val"))
+    return num_id, inicio
+
+
+def _lista_ordenada(*items, **attrs):
+    return {"type": "orderedList", "attrs": attrs, "content": [
+        {"type": "listItem", "content": [parrafo(texto(t))]} for t in items]}
+
+
+def test_listas_ordenadas_separadas_reinician_numeracion():
+    c = {"type": "doc", "content": [
+        _lista_ordenada("a", "b"), parrafo(texto("entre")), _lista_ordenada("c"),
+        _lista_ordenada("d", start=5)]}
+    d = leer(tiptap_a_docx(c, "x"))
+    ps = d.paragraphs
+    assert [p.style.name for p in ps if p.text != "entre"] == ["List Number"] * 4
+    (n1, i1), (n2, i2), (n3, i3) = (_num_id_y_inicio(d, ps[i]) for i in (0, 3, 4))
+    assert _num_id_y_inicio(d, ps[1]) == (n1, i1)
+    assert len({n1, n2, n3}) == 3
+    assert (i1, i2, i3) == ("1", "1", "5")
