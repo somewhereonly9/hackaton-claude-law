@@ -13,7 +13,8 @@ Una aplicación web donde cada usuario redacta documentos legales en un editor d
 ## 2. Alcance
 
 **Dentro:**
-- Registro, inicio y cierre de sesión.
+- Inicio y cierre de sesión. **No hay registro público:** las cuentas las crea un administrador.
+- Panel de administración: crear usuarios, asignar o restablecer contraseñas, activar y desactivar cuentas.
 - Documentos por usuario: crear, listar, renombrar, borrar, editar con autoguardado.
 - Exportación a `.docx` y PDF.
 - Subida de conocimiento por usuario (PDF, DOCX, TXT) e indexación RAG aislada por usuario.
@@ -52,7 +53,8 @@ Navegador ── TipTap (editor) + HTMX ──┐
                                       ▼
 Droplet:  Nginx → uvicorn (FastAPI)
              ├─ web/          páginas Jinja2 (login, lista de documentos, editor, conocimiento)
-             ├─ auth/         registro, login, sesión por cookie firmada
+             ├─ auth/         login, sesión por cookie firmada, hash de contraseñas
+             ├─ admin/        panel de administración de usuarios (solo administradores)
              ├─ documentos/   CRUD; contenido TipTap (JSON) en MySQL
              ├─ exportar/     TipTap JSON → .docx → PDF
              ├─ conocimiento/ subir → extraer texto → fragmentar → embeddings → Chroma
@@ -69,7 +71,7 @@ Droplet:  Nginx → uvicorn (FastAPI)
 
 ## 5. Modelo de datos (MySQL)
 
-- **usuarios:** `id`, `email` (único), `nombre`, `password_hash` (Argon2), `creado_en`.
+- **usuarios:** `id`, `email` (único), `nombre`, `password_hash` (Argon2), `es_admin` (bool), `activo` (bool), `creado_en`.
 - **documentos:** `id`, `usuario_id` (FK), `titulo`, `contenido` (JSON de TipTap), `creado_en`, `actualizado_en`.
 - **archivos_conocimiento:** `id`, `usuario_id` (FK), `nombre_original`, `ruta_disco`, `tipo` (pdf/docx/txt), `tamano_bytes`, `estado` (procesando/listo/error), `mensaje_error`, `num_fragmentos`, `creado_en`.
 - **documento_fuentes:** `id`, `documento_id` (FK), `archivo_id` (FK), `fragmento_id`, `creado_en`. Registra qué fragmentos usó el agente al redactar.
@@ -152,7 +154,13 @@ Droplet:  Nginx → uvicorn (FastAPI)
 ## 9. Seguridad y aislamiento
 
 - **Sesión:** cookie firmada con `SECRET_KEY`, `HttpOnly` y `SameSite=Lax`. En producción, además, `Secure` detrás de HTTPS.
-- **Contraseñas:** Argon2.
+- **Contraseñas:** se guardan como hash Argon2 (con sal), nunca en texto plano ni cifradas de forma reversible. Nadie puede leerlas, ni el administrador: solo puede asignar una nueva.
+- **Administración:**
+  - las rutas de `admin/` exigen `es_admin`; cualquier otro usuario recibe `404`;
+  - el administrador gestiona cuentas, pero **no ve los documentos ni el conocimiento de los usuarios**;
+  - un usuario con `activo = false` no puede iniciar sesión y sus sesiones abiertas dejan de valer;
+  - un administrador no puede desactivarse ni quitarse el rol a sí mismo, para no quedarse sin acceso;
+  - el primer administrador se crea desde la terminal del servidor: `python -m app.cli crear-admin`.
 - **Aislamiento en MySQL:** toda consulta de documentos, archivos o fuentes filtra por `usuario_id` de la sesión. Si un recurso pertenece a otro usuario, la respuesta es `404`, no `403`, para no revelar que existe.
 - **Aislamiento en Chroma:** una colección por usuario; el nombre de la colección se calcula solo en `conocimiento/` a partir del `usuario_id`.
 - **Archivos:** límite de tamaño, validación de tipo por contenido y nombres en disco generados con UUID.
@@ -169,6 +177,7 @@ Droplet:  Nginx → uvicorn (FastAPI)
 
 ## 11. Pruebas (pytest)
 
+- **Administración:** un usuario normal recibe `404` en las rutas de admin; un usuario desactivado no puede iniciar sesión; el administrador no puede desactivarse a sí mismo.
 - **Aislamiento entre usuarios, que es la prueba prioritaria:**
   - B no puede ver, editar, exportar ni borrar documentos ni archivos de A;
   - `buscar_conocimiento` en la sesión de B nunca devuelve fragmentos de A.
@@ -186,7 +195,7 @@ Cada pieza deja la app funcionando. Cada tarea termina en commit y push.
 1. **Verificación de kilopass:** el script de humo. Su resultado decide de dónde salen los embeddings.
 2. **Base:**
    - esqueleto de FastAPI, configuración y MySQL con Alembic;
-   - autenticación;
+   - autenticación, comando `crear-admin` y panel de administración de usuarios;
    - CRUD de documentos;
    - editor TipTap con autoguardado;
    - exportación a `.docx` y PDF.
@@ -200,4 +209,4 @@ Cada pieza deja la app funcionando. Cada tarea termina en commit y push.
 
 - **Embeddings locales en español:** la función por defecto de Chroma (`all-MiniLM-L6-v2`) está orientada al inglés. Si kilopass no ofrece embeddings y la calidad de búsqueda es mala, se cambia a un modelo multilingüe (`paraphrase-multilingual-MiniLM-L12-v2` vía `sentence-transformers`), que pesa más en el droplet.
 - **Memoria del droplet:** MySQL, LibreOffice (solo al exportar) y el modelo local de embeddings comparten la RAM. Se recomiendan al menos 2 GB, o 4 GB si se usan embeddings locales multilingües.
-- **Python 3.12:** se fija esta versión porque algunas dependencias (Chroma) pueden no tener todavía ruedas para versiones más nuevas.
+- **Python 3.12 (confirmado):** se fija esta versión porque algunas dependencias (Chroma) pueden no tener todavía ruedas para versiones más nuevas. En el droplet y en local se usa un entorno virtual con 3.12.
