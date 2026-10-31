@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     mysql_test_database: str = ""
     mysql_ssl_ca: str = ""
     secret_key: str
+    cookie_segura: bool = False
     chroma_path: str = "./data/chroma"
 
     def database_url(self, test: bool = False) -> str:

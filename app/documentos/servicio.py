@@ -1,3 +1,5 @@
+import copy
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -25,7 +27,7 @@ def _validar_titulo(titulo: str) -> str:
 
 def crear(db: Session, usuario_id: int, titulo: str | None = None) -> Documento:
     titulo = TITULO_POR_DEFECTO if titulo is None else _validar_titulo(titulo)
-    documento = Documento(usuario_id=usuario_id, titulo=titulo, contenido=dict(CONTENIDO_VACIO))
+    documento = Documento(usuario_id=usuario_id, titulo=titulo, contenido=copy.deepcopy(CONTENIDO_VACIO))
     db.add(documento)
     db.commit()
     return documento

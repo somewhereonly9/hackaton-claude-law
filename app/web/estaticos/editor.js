@@ -16,6 +16,24 @@ function mostrar(estado) {
   indicador.textContent = estado;
 }
 
+const acciones = {
+  negrita: { ejecutar: (c) => c.toggleBold(), activo: () => editor.isActive("bold") },
+  cursiva: { ejecutar: (c) => c.toggleItalic(), activo: () => editor.isActive("italic") },
+  h1: { ejecutar: (c) => c.toggleHeading({ level: 1 }), activo: () => editor.isActive("heading", { level: 1 }) },
+  h2: { ejecutar: (c) => c.toggleHeading({ level: 2 }), activo: () => editor.isActive("heading", { level: 2 }) },
+  h3: { ejecutar: (c) => c.toggleHeading({ level: 3 }), activo: () => editor.isActive("heading", { level: 3 }) },
+  parrafo: { ejecutar: (c) => c.setParagraph(), activo: () => editor.isActive("paragraph") },
+  lista: { ejecutar: (c) => c.toggleBulletList(), activo: () => editor.isActive("bulletList") },
+  "lista-numerada": { ejecutar: (c) => c.toggleOrderedList(), activo: () => editor.isActive("orderedList") },
+};
+
+const botones = document.querySelectorAll(".editor-barra button[data-accion]");
+botones.forEach((boton) => {
+  boton.addEventListener("click", () => {
+    acciones[boton.dataset.accion].ejecutar(editor.chain().focus()).run();
+  });
+});
+
 const editor = new Editor({
   element: elemento,
   extensions: [StarterKit],
@@ -39,6 +57,7 @@ async function guardar() {
   sucio = false; // los cambios posteriores a este punto vuelven a marcarlo
   const cuerpo = JSON.stringify(editor.getJSON());
   let correcto = false;
+  let mensajeError = "Error al guardar";
   try {
     const respuesta = await fetch(`/documentos/${documentoId}/contenido`, {
       method: "PUT",
@@ -46,13 +65,18 @@ async function guardar() {
       body: cuerpo,
     });
     correcto = respuesta.ok;
+    if (respuesta.status === 401) {
+      mensajeError = "Sesión caducada: vuelve a iniciar sesión";
+    } else if (respuesta.status === 413) {
+      mensajeError = "El documento supera 2 MB";
+    }
   } catch {
     correcto = false;
   }
   enVuelo = false;
   if (!correcto) {
     sucio = true; // se reintenta en el siguiente cambio
-    mostrar("Error al guardar");
+    mostrar(mensajeError);
     return;
   }
   if (sucio) {
@@ -69,24 +93,6 @@ window.addEventListener("beforeunload", (evento) => {
     evento.preventDefault();
     evento.returnValue = "";
   }
-});
-
-const acciones = {
-  negrita: { ejecutar: (c) => c.toggleBold(), activo: () => editor.isActive("bold") },
-  cursiva: { ejecutar: (c) => c.toggleItalic(), activo: () => editor.isActive("italic") },
-  h1: { ejecutar: (c) => c.toggleHeading({ level: 1 }), activo: () => editor.isActive("heading", { level: 1 }) },
-  h2: { ejecutar: (c) => c.toggleHeading({ level: 2 }), activo: () => editor.isActive("heading", { level: 2 }) },
-  h3: { ejecutar: (c) => c.toggleHeading({ level: 3 }), activo: () => editor.isActive("heading", { level: 3 }) },
-  parrafo: { ejecutar: (c) => c.setParagraph(), activo: () => editor.isActive("paragraph") },
-  lista: { ejecutar: (c) => c.toggleBulletList(), activo: () => editor.isActive("bulletList") },
-  "lista-numerada": { ejecutar: (c) => c.toggleOrderedList(), activo: () => editor.isActive("orderedList") },
-};
-
-const botones = document.querySelectorAll(".editor-barra button[data-accion]");
-botones.forEach((boton) => {
-  boton.addEventListener("click", () => {
-    acciones[boton.dataset.accion].ejecutar(editor.chain().focus()).run();
-  });
 });
 
 function actualizarBarra() {
