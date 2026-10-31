@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block titulo %}Documentos{% endblock %}
+{% block contenido %}
+<h1>Mis documentos</h1>
+
+<form method="post" action="/documentos">
+  <button type="submit">Nuevo documento</button>
+</form>
+
+{% if documentos %}
+<table class="tabla">
+  <thead>
+    <tr><th>Título</th><th>Modificado</th><th>Acciones</th></tr>
+  </thead>
+  <tbody>
+    {% for d in documentos %}
+    <tr>
+      <td>{{ d.titulo }}</td>
+      <td>{{ d.actualizado_en.strftime("%d/%m/%Y %H:%M") }}</td>
+      <td>
+        <a href="/documentos/{{ d.id }}">Abrir</a>
+        <button type="button" class="enlace"
+                hx-delete="/documentos/{{ d.id }}"
+                hx-confirm="¿Borrar este documento? No se puede deshacer."
+                hx-target="closest tr" hx-swap="outerHTML">Borrar</button>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>Todavía no tienes documentos.</p>
+{% endif %}
+{% endblock %}

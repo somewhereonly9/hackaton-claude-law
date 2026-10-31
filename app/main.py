@@ -1,6 +1,7 @@
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import sessionmaker
 from starlette.middleware.sessions import SessionMiddleware
@@ -12,6 +13,7 @@ from app.auth import rutas as rutas_auth
 from app.auth.dependencias import NoAutenticado, manejar_no_autenticado
 from app.db import crear_engine
 from app.documentos import rutas as rutas_documentos
+from app.documentos.servicio import ContenidoInvalido, NoEncontrado
 
 
 def create_app(settings: Settings | None = None, test: bool = False) -> FastAPI:
@@ -32,6 +34,14 @@ def create_app(settings: Settings | None = None, test: bool = False) -> FastAPI:
     )
 
     app.add_exception_handler(NoAutenticado, manejar_no_autenticado)
+    async def no_encontrado(request: Request, exc: NoEncontrado):
+        return JSONResponse({"detalle": "no encontrado"}, status_code=404)
+
+    async def contenido_invalido(request: Request, exc: ContenidoInvalido):
+        return JSONResponse({"detalle": str(exc)}, status_code=422)
+
+    app.add_exception_handler(NoEncontrado, no_encontrado)
+    app.add_exception_handler(ContenidoInvalido, contenido_invalido)
     app.include_router(rutas_auth.router)
     app.include_router(rutas_documentos.router)
     app.include_router(rutas_admin.router)
