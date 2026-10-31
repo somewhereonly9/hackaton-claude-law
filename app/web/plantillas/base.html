@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}Documentos{% endblock %}</title>
+  <link rel="stylesheet" href="/estaticos/estilos.css">
+  <script src="https://unpkg.com/htmx.org@2/dist/htmx.min.js"></script>
+</head>
+<body>
+  {% if usuario %}
+  <header class="barra">
+    <span class="barra-usuario">{{ usuario.nombre }}</span>
+    <nav>
+      <a href="/documentos">Documentos</a>
+      {% if usuario.es_admin %}<a href="/admin/usuarios">Usuarios</a>{% endif %}
+    </nav>
+    <form method="post" action="/logout"><button type="submit" class="enlace">Salir</button></form>
+  </header>
+  {% endif %}
+  <main class="contenido">
+    {% block contenido %}{% endblock %}
+  </main>
+</body>
+</html>

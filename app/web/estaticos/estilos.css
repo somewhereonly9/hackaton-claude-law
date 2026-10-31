@@ -1,0 +1,14 @@
+:root { --texto: #1f2933; --fondo: #f5f6f8; --borde: #d5d9e0; --acento: #2a5d9f; --error: #b3261e; }
+* { box-sizing: border-box; }
+body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--texto); background: var(--fondo); line-height: 1.5; }
+.barra { display: flex; align-items: center; gap: 1.5rem; padding: .6rem 1.5rem; background: #fff; border-bottom: 1px solid var(--borde); }
+.barra nav { display: flex; gap: 1rem; flex: 1; }
+.barra a, button.enlace { color: var(--acento); text-decoration: none; background: none; border: 0; font: inherit; cursor: pointer; padding: 0; }
+.barra-usuario { font-weight: 600; }
+.contenido { max-width: 60rem; margin: 2rem auto; padding: 0 1rem; }
+.tarjeta { background: #fff; border: 1px solid var(--borde); border-radius: 8px; padding: 1.5rem; }
+.tarjeta-login { max-width: 22rem; margin: 4rem auto; }
+label { display: block; margin-bottom: 1rem; font-size: .9rem; }
+input { display: block; width: 100%; margin-top: .25rem; padding: .5rem; border: 1px solid var(--borde); border-radius: 4px; font: inherit; }
+button { padding: .5rem 1rem; border: 0; border-radius: 4px; background: var(--acento); color: #fff; font: inherit; cursor: pointer; }
+.error { color: var(--error); }
