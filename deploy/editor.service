@@ -1,0 +1,20 @@
+# Servicio systemd de la app. Se instala en /etc/systemd/system/editor.service.
+[Unit]
+Description=Editor de documentos legales (FastAPI + uvicorn)
+After=network.target mysql.service
+Wants=mysql.service
+
+[Service]
+User=editor
+Group=editor
+WorkingDirectory=/srv/editor/app
+# LibreOffice necesita un HOME escribible.
+Environment=HOME=/srv/editor
+ExecStart=/srv/editor/app/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000 --workers 1 --proxy-headers --forwarded-allow-ips=127.0.0.1
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
