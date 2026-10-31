@@ -5,6 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import sessionmaker
 from starlette.middleware.sessions import SessionMiddleware
 
+import app.modelos  # noqa: F401  (registra las tablas en Base.metadata)
 from app.config import Settings, get_settings
 from app.db import crear_engine
 
@@ -14,6 +15,7 @@ def create_app(settings: Settings | None = None, test: bool = False) -> FastAPI:
     app = FastAPI()
     app.state.settings = settings
     app.state.engine = crear_engine(settings.database_url(test=test))
+    # expire_on_commit=False: las pruebas escriben con una sesión y leen con otra.
     app.state.SessionLocal = sessionmaker(bind=app.state.engine, expire_on_commit=False)
 
     app.mount(

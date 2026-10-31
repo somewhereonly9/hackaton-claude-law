@@ -9,10 +9,12 @@ from app.main import create_app
 @pytest.fixture
 def app():
     aplicacion = create_app(test=True)
-    Base.metadata.drop_all(aplicacion.state.engine)
-    Base.metadata.create_all(aplicacion.state.engine)
-    yield aplicacion
-    aplicacion.state.engine.dispose()
+    try:
+        Base.metadata.drop_all(aplicacion.state.engine)
+        Base.metadata.create_all(aplicacion.state.engine)
+        yield aplicacion
+    finally:
+        aplicacion.state.engine.dispose()
 
 
 @pytest.fixture
