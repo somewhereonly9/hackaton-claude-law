@@ -14,6 +14,18 @@ El repositorio está vacío: todavía no hay código, dependencias ni comandos d
 
 Nada de lo anterior está decidido. Confirma con el usuario antes de fijar frameworks, estructura de carpetas o proveedores.
 
+## Comandos
+
+```bash
+uv sync                                          # crea .venv (Python 3.12) e instala dependencias
+uv run uvicorn app.main:app --reload             # servidor de desarrollo
+uv run pytest                                    # todas las pruebas
+uv run pytest tests/archivo.py::nombre -v        # una sola prueba
+uv run alembic upgrade head                      # aplica las migraciones
+```
+
+Las pruebas requieren MySQL local y la variable `MYSQL_TEST_DATABASE` (una base distinta de `MYSQL_DATABASE`, que se vacía en cada prueba). La configuración se lee de `.env` (ver `.env.example`).
+
 ## Mantenimiento de este archivo
 
 Cuando exista código, actualiza este archivo con:
