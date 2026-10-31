@@ -28,13 +28,9 @@ Este archivo sirve para que cualquier sesión nueva de Claude Code, u otra perso
 
 ## En producción
 
-- **Dirección:** http://64.23.245.92, solo por IP.
+- **Dirección:** https://editorwork.dagdugrangel.com.mx, con certificado de Let's Encrypt (vence el 2027-01-29 y se renueva solo) y `COOKIE_SEGURA=true`.
 - **Cómo actualizar:** ver la sección "Despliegue" de `CLAUDE.md`.
-- **Pendiente:**
-  - el dominio, que pasará el usuario;
-  - HTTPS con Let's Encrypt;
-  - `COOKIE_SEGURA=true` en el `.env` del servidor;
-  - la `KILOPASS_API_KEY` del servidor, que pone el usuario.
+- **Pendiente:** la `KILOPASS_API_KEY` del servidor, que pone el usuario.
 
 ## Siguientes pasos
 
@@ -49,7 +45,6 @@ Este archivo sirve para que cualquier sesión nueva de Claude Code, u otra perso
    - el agente guarda siempre a través de `documentos.servicio.guardar_contenido`;
    - agregar la herramienta `buscar_jurisprudencia` con la API `https://corpusiuris.mx/conecta`. Antes hay que preguntar al usuario si es REST o MCP, cómo se autentica y pedirle un ejemplo de respuesta.
 3. **Plan 5 (despliegue):**
-   - HTTPS y cookie `Secure`;
    - `acquire(timeout)` en el cerrojo del PDF, para que una cola de descargas no agote los hilos ni el pool de la BD;
    - `limit_req` en `/login`;
    - cabeceras de seguridad;

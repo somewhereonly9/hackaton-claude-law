@@ -105,11 +105,11 @@ deploy/           servicio systemd, sitio Nginx, actualizar.sh
 
 ## Despliegue
 
-- **Servidor:** droplet de DigitalOcean (1 vCPU, 1 GB de RAM, 2 GB de swap), acceso con `ssh hackaton`. Hoy atiende por IP en http://64.23.245.92.
+- **Servidor:** droplet de DigitalOcean (1 vCPU, 1 GB de RAM, 2 GB de swap), acceso con `ssh hackaton`. La app está en https://editorwork.dagdugrangel.com.mx (registro A en el DNS de GoDaddy de dagdugrangel.com.mx → 64.23.245.92). Por IP ya no se sirve.
 - **Instalación:**
   - el código vive en `/srv/editor/app`, con el usuario de sistema `editor`;
   - el servicio systemd es `editor` (`deploy/editor.service`), con uvicorn y `--workers 1`, que el cerrojo del PDF exige;
   - Nginx usa `deploy/nginx-editor.conf`.
 - **Actualizar:** `ssh hackaton 'bash /srv/editor/app/deploy/actualizar.sh'` (hace pull, `uv sync`, migraciones y reinicio).
 - **`.env` del servidor:** se generó allí y nunca se imprime.
-- **Pendiente:** dominio, HTTPS con Let's Encrypt y `COOKIE_SEGURA=true`.
+- **HTTPS:** certificado de Let's Encrypt con renovación automática (`certbot.timer`). `certbot --nginx` agregó el bloque 443 y la redirección sobre la copia instalada de Nginx, no sobre `deploy/nginx-editor.conf`; si se reinstala ese archivo, hay que volver a correr `certbot --nginx -d editorwork.dagdugrangel.com.mx`. El `.env` del servidor tiene `COOKIE_SEGURA=true`.
