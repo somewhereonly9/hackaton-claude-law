@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block titulo %}{{ documento.titulo }}{% endblock %}
+{% block contenido %}
+<div class="editor-cabecera">
+  <form hx-post="/documentos/{{ documento.id }}/titulo" hx-trigger="change" hx-target="#titulo-resultado" hx-swap="innerHTML">
+    <label>Título
+      <input type="text" name="titulo" value="{{ documento.titulo }}" maxlength="200" required>
+    </label>
+  </form>
+  <span id="titulo-resultado"></span>
+  <span id="estado-guardado" role="status" aria-live="polite">Guardado</span>
+</div>
+
+<div class="editor-barra" role="toolbar" aria-label="Formato">
+  <button type="button" data-accion="negrita"><strong>N</strong></button>
+  <button type="button" data-accion="cursiva"><em>C</em></button>
+  <button type="button" data-accion="h1">H1</button>
+  <button type="button" data-accion="h2">H2</button>
+  <button type="button" data-accion="h3">H3</button>
+  <button type="button" data-accion="parrafo">Párrafo</button>
+  <button type="button" data-accion="lista">Lista con viñetas</button>
+  <button type="button" data-accion="lista-numerada">Lista numerada</button>
+</div>
+
+<div id="editor" data-documento-id="{{ documento.id }}"></div>
+<script id="contenido-inicial" type="application/json">{{ documento.contenido | tojson }}</script>
+<script type="module" src="/estaticos/editor.js"></script>
+{% endblock %}

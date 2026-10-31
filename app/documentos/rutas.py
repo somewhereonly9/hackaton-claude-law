@@ -31,11 +31,17 @@ def crear(usuario: Usuario = Depends(usuario_actual), db: Session = Depends(get_
     return RedirectResponse(f"/documentos/{documento.id}", status_code=303)
 
 
-# Provisional: la Task 7 reemplaza esta respuesta por la página del editor.
 @router.get("/{documento_id}")
-def abrir(documento_id: int, usuario: Usuario = Depends(usuario_actual), db: Session = Depends(get_db)):
+def abrir(
+    documento_id: int,
+    request: Request,
+    usuario: Usuario = Depends(usuario_actual),
+    db: Session = Depends(get_db),
+):
     documento = servicio.obtener(db, usuario.id, documento_id)
-    return HTMLResponse(f"<h1>{escape(documento.titulo)}</h1>")
+    return templates.TemplateResponse(
+        request, "editor.html", {"usuario": usuario, "documento": documento}
+    )
 
 
 @router.put("/{documento_id}/contenido")

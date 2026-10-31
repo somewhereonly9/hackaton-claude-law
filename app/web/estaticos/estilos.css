@@ -12,3 +12,11 @@ label { display: block; margin-bottom: 1rem; font-size: .9rem; }
 input { display: block; width: 100%; margin-top: .25rem; padding: .5rem; border: 1px solid var(--borde); border-radius: 4px; font: inherit; }
 button { padding: .5rem 1rem; border: 0; border-radius: 4px; background: var(--acento); color: #fff; font: inherit; cursor: pointer; }
 .error { color: var(--error); }
+.editor-cabecera { display: flex; align-items: flex-end; gap: 1rem; }
+.editor-cabecera form { flex: 1; }
+#estado-guardado { margin-bottom: 1rem; font-size: .9rem; color: #52606d; }
+.editor-barra { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: .5rem; }
+.editor-barra button { background: #fff; color: var(--texto); border: 1px solid var(--borde); }
+.editor-barra button.activo { background: var(--acento); color: #fff; }
+#editor { background: #fff; border: 1px solid var(--borde); border-radius: 8px; padding: 1rem 1.5rem; min-height: 24rem; }
+#editor .ProseMirror { outline: none; min-height: 22rem; }
